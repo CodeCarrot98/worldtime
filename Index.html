@@ -1,0 +1,680 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Institute of Neurodevelopment - Time Trakcer Across the Globe</title>
+    <meta name="description" content="A modern world clock to track time in any city worldwide">
+    <script src="https://cdn.tailwindcss.com"></script>
+    <style>
+        @import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=JetBrains+Mono:wght@700&display=swap');
+        
+        body {
+            font-family: 'Inter', sans-serif;
+        }
+        
+        .clock-time {
+            font-family: 'JetBrains Mono', monospace;
+        }
+        
+        .gradient-text {
+            background: linear-gradient(135deg, #60a5fa 0%, #a78bfa 100%);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            background-clip: text;
+        }
+        
+        .clock-card {
+            transition: all 0.3s ease;
+        }
+        
+        .clock-card:hover {
+            transform: scale(1.05);
+        }
+        
+        .search-input:focus {
+            outline: none;
+            border-color: #3b82f6;
+            box-shadow: 0 0 0 3px rgba(59, 130, 246, 0.1);
+        }
+        
+        .dropdown-item {
+            transition: background-color 0.2s ease;
+        }
+        
+        .dropdown-item:hover {
+            background-color: #374151;
+        }
+        
+        .remove-btn {
+            opacity: 0;
+            transition: opacity 0.2s ease;
+        }
+        
+        .clock-card:hover .remove-btn {
+            opacity: 1;
+        }
+        
+        .fade-in {
+            animation: fadeIn 0.3s ease-in;
+        }
+        
+        @keyframes fadeIn {
+            from { opacity: 0; transform: translateY(10px); }
+            to { opacity: 1; transform: translateY(0); }
+        }
+
+        .toggle-checkbox:checked {
+            right: 0;
+            border-color: #3b82f6;
+        }
+        
+        .toggle-checkbox:checked + .toggle-label {
+            background-color: #3b82f6;
+        }
+
+        input[type="date"]::-webkit-calendar-picker-indicator,
+        input[type="time"]::-webkit-calendar-picker-indicator {
+            filter: invert(1);
+            cursor: pointer;
+        }
+    </style>
+</head>
+<body class="min-h-screen bg-gradient-to-br from-gray-900 via-slate-900 to-gray-900 text-white">
+    
+    <div class="p-4 md:p-8">
+        <!-- Header -->
+        <div class="max-w-7xl mx-auto mb-8">
+            <div class="flex items-center justify-center mb-2">
+                <svg class="w-10 h-10 mr-3 text-blue-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3.055 11H5a2 2 0 012 2v1a2 2 0 002 2 2 2 0 012 2v2.945M8 3.935V5.5A2.5 2.5 0 0010.5 8h.5a2 2 0 012 2 2 2 0 104 0 2 2 0 012-2h1.064M15 20.488V18a2 2 0 012-2h3.064M21 12a9 9 0 11-18 0 9 9 0 0118 0z"></path>
+                </svg>
+                <h1 class="text-4xl md:text-5xl font-bold gradient-text">Institute of Neurodevelopment</h1>
+            </div>
+            <p class="text-center text-gray-400 text-sm">Track time across the globe</p>
+        </div>
+
+        <!-- Mode Toggle -->
+        <div class="max-w-2xl mx-auto mb-6">
+            <div class="bg-gray-800 border border-gray-700 rounded-xl p-4 flex items-center justify-between">
+                <div class="flex items-center">
+                    <svg class="w-5 h-5 mr-2 text-blue-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z"></path>
+                    </svg>
+                    <span class="text-white font-medium">Time Mode:</span>
+                </div>
+                <div class="flex items-center gap-3">
+                    <span class="text-gray-400 text-sm" id="liveLabel">Live</span>
+                    <div class="relative">
+                        <input type="checkbox" id="modeToggle" class="sr-only">
+                        <div class="block bg-gray-600 w-14 h-8 rounded-full cursor-pointer" onclick="toggleMode()"></div>
+                        <div class="dot absolute left-1 top-1 bg-white w-6 h-6 rounded-full transition" id="toggleDot"></div>
+                    </div>
+                    <span class="text-blue-400 text-sm font-medium" id="customLabel">Custom</span>
+                </div>
+            </div>
+        </div>
+
+        <!-- Custom Mode Panel -->
+        <div id="customPanel" class="hidden max-w-2xl mx-auto mb-6">
+            <div class="bg-gray-800 border border-gray-700 rounded-xl p-6">
+                <div class="flex items-center justify-between mb-4">
+                    <h3 class="text-lg font-semibold text-white">Set Custom Time</h3>
+                    <button onclick="clearCustomMode()" class="text-sm text-red-400 hover:text-red-300 flex items-center gap-1">
+                        <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"></path>
+                        </svg>
+                        Clear & Reset
+                    </button>
+                </div>
+
+                <!-- Reference Location -->
+                <div class="mb-4">
+                    <label class="block text-gray-400 text-sm mb-2">Reference Location</label>
+                    <select id="referenceCity" onchange="updateCustomTime()" class="w-full bg-gray-700 border border-gray-600 rounded-lg px-4 py-3 text-white focus:outline-none focus:border-blue-500">
+                        <option value="">Select a city...</option>
+                    </select>
+                </div>
+
+                <!-- Date and Time Inputs -->
+                <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+                    <div>
+                        <label class="block text-gray-400 text-sm mb-2">Date</label>
+                        <input type="date" id="customDate" onchange="updateCustomTime()" class="w-full bg-gray-700 border border-gray-600 rounded-lg px-4 py-3 text-white focus:outline-none focus:border-blue-500">
+                    </div>
+                    <div>
+                        <label class="block text-gray-400 text-sm mb-2">Time</label>
+                        <input type="time" id="customTime" onchange="updateCustomTime()" class="w-full bg-gray-700 border border-gray-600 rounded-lg px-4 py-3 text-white focus:outline-none focus:border-blue-500">
+                    </div>
+                </div>
+
+                <!-- Info Banner -->
+                <div id="customInfoBanner" class="hidden mt-4 bg-blue-500/10 border border-blue-500/30 rounded-lg p-3">
+                    <p class="text-blue-300 text-sm"></p>
+                </div>
+            </div>
+        </div>
+
+        <!-- Search Bar -->
+        <div class="max-w-2xl mx-auto mb-12 relative">
+            <div class="relative">
+                <svg class="absolute left-4 top-1/2 transform -translate-y-1/2 text-gray-400 w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z"></path>
+                </svg>
+                <input 
+                    type="text" 
+                    id="searchInput"
+                    placeholder="Search for any city..."
+                    class="search-input w-full bg-gray-800 border border-gray-700 rounded-xl pl-12 pr-4 py-4 text-white placeholder-gray-500"
+                    autocomplete="off"
+                >
+            </div>
+            
+            <!-- Autocomplete Dropdown -->
+            <div id="dropdown" class="hidden absolute w-full mt-2 bg-gray-800 border border-gray-700 rounded-xl shadow-2xl overflow-hidden z-10 max-h-80 overflow-y-auto"></div>
+        </div>
+
+        <!-- Empty State -->
+        <div id="emptyState" class="hidden text-center py-20">
+            <svg class="w-16 h-16 mx-auto mb-4 text-gray-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z"></path>
+            </svg>
+            <p class="text-gray-500 text-lg">No clocks yet. Search for a city to get started!</p>
+        </div>
+
+        <!-- Clocks Grid -->
+        <div id="clocksGrid" class="max-w-7xl mx-auto grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6"></div>
+
+        <!-- Footer -->
+        <div class="max-w-7xl mx-auto mt-16 text-center text-gray-500 text-sm">
+            <p>Tracking time across <span id="cityCount">70</span>+ cities worldwide</p>
+        </div>
+    </div>
+
+    <script>
+        // Comprehensive timezone database
+        const timezoneData = {
+            // North America
+            "New York, USA": "America/New_York",
+            "Los Angeles, USA": "America/Los_Angeles",
+            "Chicago, USA": "America/Chicago",
+            "Toronto, Canada": "America/Toronto",
+            "Vancouver, Canada": "America/Vancouver",
+            "Mexico City, Mexico": "America/Mexico_City",
+            "Miami, USA": "America/New_York",
+            "San Francisco, USA": "America/Los_Angeles",
+            "Boston, USA": "America/New_York",
+            "Seattle, USA": "America/Los_Angeles",
+            "Denver, USA": "America/Denver",
+            "Phoenix, USA": "America/Phoenix",
+            "Dallas, USA": "America/Chicago",
+            "Houston, USA": "America/Chicago",
+            "Montreal, Canada": "America/Toronto",
+            "Atlanta, USA": "America/New_York",
+            "Philadelphia, USA": "America/New_York",
+            "Las Vegas, USA": "America/Los_Angeles",
+            
+            // South America
+            "São Paulo, Brazil": "America/Sao_Paulo",
+            "Buenos Aires, Argentina": "America/Argentina/Buenos_Aires",
+            "Rio de Janeiro, Brazil": "America/Sao_Paulo",
+            "Lima, Peru": "America/Lima",
+            "Bogota, Colombia": "America/Bogota",
+            "Santiago, Chile": "America/Santiago",
+            "Caracas, Venezuela": "America/Caracas",
+            "Quito, Ecuador": "America/Guayaquil",
+            "Montevideo, Uruguay": "America/Montevideo",
+            
+            // Europe
+            "London, UK": "Europe/London",
+            "Paris, France": "Europe/Paris",
+            "Berlin, Germany": "Europe/Berlin",
+            "Madrid, Spain": "Europe/Madrid",
+            "Rome, Italy": "Europe/Rome",
+            "Amsterdam, Netherlands": "Europe/Amsterdam",
+            "Brussels, Belgium": "Europe/Brussels",
+            "Vienna, Austria": "Europe/Vienna",
+            "Stockholm, Sweden": "Europe/Stockholm",
+            "Copenhagen, Denmark": "Europe/Copenhagen",
+            "Oslo, Norway": "Europe/Oslo",
+            "Helsinki, Finland": "Europe/Helsinki",
+            "Warsaw, Poland": "Europe/Warsaw",
+            "Prague, Czech Republic": "Europe/Prague",
+            "Budapest, Hungary": "Europe/Budapest",
+            "Athens, Greece": "Europe/Athens",
+            "Lisbon, Portugal": "Europe/Lisbon",
+            "Dublin, Ireland": "Europe/Dublin",
+            "Zurich, Switzerland": "Europe/Zurich",
+            "Moscow, Russia": "Europe/Moscow",
+            "Barcelona, Spain": "Europe/Madrid",
+            "Munich, Germany": "Europe/Berlin",
+            "Milan, Italy": "Europe/Rome",
+            
+            // Asia
+            "Tokyo, Japan": "Asia/Tokyo",
+            "Beijing, China": "Asia/Shanghai",
+            "Shanghai, China": "Asia/Shanghai",
+            "Hong Kong": "Asia/Hong_Kong",
+            "Singapore": "Asia/Singapore",
+            "Seoul, South Korea": "Asia/Seoul",
+            "Mumbai, India": "Asia/Kolkata",
+            "Delhi, India": "Asia/Kolkata",
+            "Bangalore, India": "Asia/Kolkata",
+            "Bangkok, Thailand": "Asia/Bangkok",
+            "Jakarta, Indonesia": "Asia/Jakarta",
+            "Manila, Philippines": "Asia/Manila",
+            "Kuala Lumpur, Malaysia": "Asia/Kuala_Lumpur",
+            "Taipei, Taiwan": "Asia/Taipei",
+            "Ho Chi Minh City, Vietnam": "Asia/Ho_Chi_Minh",
+            "Dubai, UAE": "Asia/Dubai",
+            "Tel Aviv, Israel": "Asia/Jerusalem",
+            "Riyadh, Saudi Arabia": "Asia/Riyadh",
+            "Istanbul, Turkey": "Europe/Istanbul",
+            "Karachi, Pakistan": "Asia/Karachi",
+            "Dhaka, Bangladesh": "Asia/Dhaka",
+            "Hanoi, Vietnam": "Asia/Bangkok",
+            "Kabul, Afghanistan": "Asia/Kabul",
+            
+            // Oceania
+            "Sydney, Australia": "Australia/Sydney",
+            "Melbourne, Australia": "Australia/Melbourne",
+            "Brisbane, Australia": "Australia/Brisbane",
+            "Perth, Australia": "Australia/Perth",
+            "Auckland, New Zealand": "Pacific/Auckland",
+            "Wellington, New Zealand": "Pacific/Auckland",
+            "Adelaide, Australia": "Australia/Adelaide",
+            
+            // Africa
+            "Cairo, Egypt": "Africa/Cairo",
+            "Lagos, Nigeria": "Africa/Lagos",
+            "Johannesburg, South Africa": "Africa/Johannesburg",
+            "Nairobi, Kenya": "Africa/Nairobi",
+            "Casablanca, Morocco": "Africa/Casablanca",
+            "Accra, Ghana": "Africa/Accra",
+            "Addis Ababa, Ethiopia": "Africa/Addis_Ababa",
+            "Algiers, Algeria": "Africa/Algiers",
+            "Tunis, Tunisia": "Africa/Tunis",
+            "Cape Town, South Africa": "Africa/Johannesburg",
+            "Dakar, Senegal": "Africa/Dakar",
+        };
+
+        let clocks = [];
+        let updateInterval;
+        let isCustomMode = false;
+        let customReferenceTime = null;
+        let referenceCity = null;
+        let referenceTimezone = null;
+
+        // Initialize
+        function init() {
+            // Auto-detect local timezone
+            const localTimezone = Intl.DateTimeFormat().resolvedOptions().timeZone;
+            const localCity = localTimezone.split('/').pop().replace(/_/g, ' ');
+            
+            addClock(`${localCity} (Local)`, localTimezone, true);
+
+            // Load saved clocks
+            const saved = localStorage.getItem('worldClocks');
+            if (saved) {
+                try {
+                    const savedClocks = JSON.parse(saved);
+                    savedClocks.forEach(clock => {
+                        if (!clock.isLocal) {
+                            addClock(clock.city, clock.timezone, false);
+                        }
+                    });
+                } catch (e) {
+                    console.error('Error loading saved clocks:', e);
+                }
+            }
+
+            // Populate reference city dropdown
+            populateReferenceDropdown();
+
+            // Start clock updates
+            updateClocks();
+            updateInterval = setInterval(() => {
+                if (!isCustomMode) {
+                    updateClocks();
+                }
+            }, 1000);
+
+            // Setup search
+            setupSearch();
+        }
+
+        function populateReferenceDropdown() {
+            const select = document.getElementById('referenceCity');
+            const localTimezone = Intl.DateTimeFormat().resolvedOptions().timeZone;
+            const localCity = localTimezone.split('/').pop().replace(/_/g, ' ');
+            
+            // Add local as first option
+            const localOption = document.createElement('option');
+            localOption.value = localTimezone;
+            localOption.textContent = `${localCity} (Local)`;
+            select.appendChild(localOption);
+            
+            // Add all cities
+            Object.keys(timezoneData).sort().forEach(city => {
+                const option = document.createElement('option');
+                option.value = timezoneData[city];
+                option.textContent = city;
+                select.appendChild(option);
+            });
+            
+            // Set default to local
+            select.value = localTimezone;
+            referenceTimezone = localTimezone;
+            referenceCity = `${localCity} (Local)`;
+        }
+
+        function toggleMode() {
+            isCustomMode = !isCustomMode;
+            const toggleDot = document.getElementById('toggleDot');
+            const customPanel = document.getElementById('customPanel');
+            const liveLabel = document.getElementById('liveLabel');
+            const customLabel = document.getElementById('customLabel');
+            
+            if (isCustomMode) {
+                toggleDot.style.transform = 'translateX(24px)';
+                toggleDot.parentElement.style.backgroundColor = '#3b82f6';
+                customPanel.classList.remove('hidden');
+                liveLabel.classList.add('text-gray-400');
+                liveLabel.classList.remove('font-medium');
+                customLabel.classList.add('font-medium');
+                
+                // Set current date and time as default
+                const now = new Date();
+                document.getElementById('customDate').value = now.toISOString().split('T')[0];
+                document.getElementById('customTime').value = now.toTimeString().slice(0, 5);
+                
+                updateCustomTime();
+            } else {
+                toggleDot.style.transform = 'translateX(0)';
+                toggleDot.parentElement.style.backgroundColor = '#4b5563';
+                customPanel.classList.add('hidden');
+                liveLabel.classList.remove('text-gray-400');
+                liveLabel.classList.add('font-medium');
+                customLabel.classList.remove('font-medium');
+                
+                customReferenceTime = null;
+                document.getElementById('customInfoBanner').classList.add('hidden');
+                updateClocks();
+            }
+        }
+
+        function updateCustomTime() {
+            const refCity = document.getElementById('referenceCity');
+            const dateInput = document.getElementById('customDate').value;
+            const timeInput = document.getElementById('customTime').value;
+            
+            if (!refCity.value || !dateInput || !timeInput) return;
+            
+            referenceCity = refCity.options[refCity.selectedIndex].text;
+            referenceTimezone = refCity.value;
+            
+            // Create a date object from the inputs
+            const dateTimeString = `${dateInput}T${timeInput}:00`;
+            customReferenceTime = new Date(dateTimeString);
+            
+            // Show info banner
+            const banner = document.getElementById('customInfoBanner');
+            const bannerText = banner.querySelector('p');
+            bannerText.textContent = `Showing times for: ${formatDate(referenceTimezone, customReferenceTime)} at ${formatTime(referenceTimezone, customReferenceTime)} in ${referenceCity}`;
+            banner.classList.remove('hidden');
+            
+            // Update all clocks
+            updateClocks();
+        }
+
+        function clearCustomMode() {
+            isCustomMode = false;
+            toggleMode();
+            document.getElementById('customDate').value = '';
+            document.getElementById('customTime').value = '';
+            
+            // Reset to local timezone
+            const localTimezone = Intl.DateTimeFormat().resolvedOptions().timeZone;
+            document.getElementById('referenceCity').value = localTimezone;
+        }
+
+        function setupSearch() {
+            const searchInput = document.getElementById('searchInput');
+            const dropdown = document.getElementById('dropdown');
+
+            searchInput.addEventListener('input', (e) => {
+                const query = e.target.value.trim().toLowerCase();
+                
+                if (query) {
+                    const filtered = Object.keys(timezoneData)
+                        .filter(city => city.toLowerCase().includes(query))
+                        .slice(0, 8);
+                    
+                    if (filtered.length > 0) {
+                        dropdown.innerHTML = filtered.map(city => `
+                            <button class="dropdown-item w-full text-left px-4 py-3 flex items-center" onclick="selectCity('${city.replace(/'/g, "\\'")}')">
+                                <svg class="w-4 h-4 mr-3 text-gray-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17.657 16.657L13.414 20.9a1.998 1.998 0 01-2.827 0l-4.244-4.243a8 8 0 1111.314 0z"></path>
+                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 11a3 3 0 11-6 0 3 3 0 016 0z"></path>
+                                </svg>
+                                <span class="text-white">${city}</span>
+                            </button>
+                        `).join('');
+                        dropdown.classList.remove('hidden');
+                    } else {
+                        dropdown.classList.add('hidden');
+                    }
+                } else {
+                    dropdown.classList.add('hidden');
+                }
+            });
+
+            // Close dropdown on outside click
+            document.addEventListener('click', (e) => {
+                if (!searchInput.contains(e.target) && !dropdown.contains(e.target)) {
+                    dropdown.classList.add('hidden');
+                }
+            });
+        }
+
+        function selectCity(city) {
+            const timezone = timezoneData[city];
+            const exists = clocks.some(c => c.timezone === timezone);
+            
+            if (!exists) {
+                addClock(city, timezone, false);
+                saveClocks();
+            }
+            
+            document.getElementById('searchInput').value = '';
+            document.getElementById('dropdown').classList.add('hidden');
+        }
+
+        function addClock(city, timezone, isLocal) {
+            const clock = {
+                id: Date.now() + Math.random(),
+                city,
+                timezone,
+                isLocal
+            };
+            
+            clocks.push(clock);
+            renderClocks();
+        }
+
+        function removeClock(id) {
+            clocks = clocks.filter(c => c.id !== id);
+            renderClocks();
+            saveClocks();
+        }
+
+        function saveClocks() {
+            const nonLocalClocks = clocks.filter(c => !c.isLocal);
+            localStorage.setItem('worldClocks', JSON.stringify(nonLocalClocks));
+        }
+
+        function getTimeOfDay(timezone, dateTime) {
+            const hour = parseInt(new Intl.DateTimeFormat('en-US', {
+                timeZone: timezone,
+                hour: '2-digit',
+                hour12: false
+            }).format(dateTime));
+            
+            if (hour >= 6 && hour < 12) return 'morning';
+            if (hour >= 12 && hour < 18) return 'afternoon';
+            if (hour >= 18 && hour < 22) return 'evening';
+            return 'night';
+        }
+
+        function formatTime(timezone, dateTime = new Date()) {
+            if (isCustomMode && customReferenceTime) {
+                // Calculate time difference from reference timezone
+                const refDate = customReferenceTime;
+                
+                // Get offset in minutes for both timezones at the reference time
+                const refFormatter = new Intl.DateTimeFormat('en-US', {
+                    timeZone: referenceTimezone,
+                    timeZoneName: 'short'
+                });
+                
+                const targetFormatter = new Intl.DateTimeFormat('en-US', {
+                    timeZone: timezone,
+                    timeZoneName: 'short'
+                });
+                
+                // Format the reference time in both timezones
+                return new Intl.DateTimeFormat('en-US', {
+                    timeZone: timezone,
+                    hour: '2-digit',
+                    minute: '2-digit',
+                    second: '2-digit',
+                    hour12: true
+                }).format(refDate);
+            }
+            
+            return new Intl.DateTimeFormat('en-US', {
+                timeZone: timezone,
+                hour: '2-digit',
+                minute: '2-digit',
+                second: '2-digit',
+                hour12: true
+            }).format(dateTime);
+        }
+
+        function formatDate(timezone, dateTime = new Date()) {
+            if (isCustomMode && customReferenceTime) {
+                return new Intl.DateTimeFormat('en-US', {
+                    timeZone: timezone,
+                    weekday: 'long',
+                    year: 'numeric',
+                    month: 'long',
+                    day: 'numeric'
+                }).format(customReferenceTime);
+            }
+            
+            return new Intl.DateTimeFormat('en-US', {
+                timeZone: timezone,
+                weekday: 'long',
+                year: 'numeric',
+                month: 'long',
+                day: 'numeric'
+            }).format(dateTime);
+        }
+
+        function renderClocks() {
+            const grid = document.getElementById('clocksGrid');
+            const emptyState = document.getElementById('emptyState');
+            
+            if (clocks.length === 0) {
+                grid.innerHTML = '';
+                emptyState.classList.remove('hidden');
+                return;
+            }
+            
+            emptyState.classList.add('hidden');
+            
+            const currentTime = isCustomMode && customReferenceTime ? customReferenceTime : new Date();
+            
+            grid.innerHTML = clocks.map(clock => {
+                const timeOfDay = getTimeOfDay(clock.timezone, currentTime);
+                const gradients = {
+                    morning: 'from-orange-500/20 to-yellow-500/20',
+                    afternoon: 'from-blue-500/20 to-cyan-500/20',
+                    evening: 'from-purple-500/20 to-pink-500/20',
+                    night: 'from-indigo-500/20 to-blue-900/20'
+                };
+                
+                const badges = {
+                    morning: 'bg-yellow-500/20 text-yellow-300',
+                    afternoon: 'bg-blue-500/20 text-blue-300',
+                    evening: 'bg-purple-500/20 text-purple-300',
+                    night: 'bg-indigo-500/20 text-indigo-300'
+                };
+
+                const isReference = isCustomMode && clock.timezone === referenceTimezone;
+
+                return `
+                    <div class="clock-card fade-in relative bg-gradient-to-br ${gradients[timeOfDay]} backdrop-blur-sm border ${isReference ? 'border-blue-500 border-2' : 'border-gray-700/50'} rounded-2xl p-6 shadow-xl group">
+                        ${isReference ? `
+                            <div class="absolute -top-3 left-4 bg-blue-500 text-white text-xs px-3 py-1 rounded-full font-semibold">
+                                Reference
+                            </div>
+                        ` : ''}
+                        
+                        ${!clock.isLocal ? `
+                            <button onclick="removeClock(${clock.id})" class="remove-btn absolute top-4 right-4 bg-red-500/20 hover:bg-red-500/40 rounded-full p-2">
+                                <svg class="w-4 h-4 text-red-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"></path>
+                                </svg>
+                            </button>
+                        ` : ''}
+                        
+                        <div class="mb-4">
+                            <h3 class="text-xl font-semibold text-white flex items-center">
+                                <svg class="w-5 h-5 mr-2 text-blue-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17.657 16.657L13.414 20.9a1.998 1.998 0 01-2.827 0l-4.244-4.243a8 8 0 1111.314 0z"></path>
+                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 11a3 3 0 11-6 0 3 3 0 016 0z"></path>
+                                </svg>
+                                ${clock.city}
+                            </h3>
+                        </div>
+                        
+                        <div class="mb-3">
+                            <div class="clock-time text-5xl font-bold text-white tracking-tight" data-timezone="${clock.timezone}">
+                                ${formatTime(clock.timezone, currentTime)}
+                            </div>
+                        </div>
+                        
+                        <div class="text-gray-400 text-sm" data-date="${clock.timezone}">
+                            ${formatDate(clock.timezone, currentTime)}
+                        </div>
+                        
+                        <div class="absolute bottom-4 right-4">
+                            <div class="text-xs px-3 py-1 rounded-full ${badges[timeOfDay]}">
+                                ${timeOfDay}
+                            </div>
+                        </div>
+                    </div>
+                `;
+            }).join('');
+        }
+
+        function updateClocks() {
+            const currentTime = isCustomMode && customReferenceTime ? customReferenceTime : new Date();
+            
+            document.querySelectorAll('[data-timezone]').forEach(el => {
+                const timezone = el.getAttribute('data-timezone');
+                el.textContent = formatTime(timezone, currentTime);
+            });
+            
+            document.querySelectorAll('[data-date]').forEach(el => {
+                const timezone = el.getAttribute('data-date');
+                el.textContent = formatDate(timezone, currentTime);
+            });
+        }
+
+        // Start the app
+        init();
+    </script>
+</body>
+</html>
